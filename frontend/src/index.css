@@ -1,0 +1,21 @@
+@import "tailwindcss";
+
+@theme {
+  --color-bg: #0B0F19;
+  --color-panel: #111827;
+  --color-panel2: #172033;
+  --color-line: #1f2a3d;
+  --color-maib: #00A859;
+  --color-micb: #2563EB;
+  --color-victoria: #EAB308;
+  --color-otp: #84CC16;
+  --color-fincom: #A855F7;
+}
+
+html, body, #root { height: 100%; }
+body { background: #0B0F19; color: #e5e7eb; font-family: ui-sans-serif, system-ui, sans-serif; overflow: hidden; }
+
+.react-flow__attribution { display: none; }
+.react-flow__controls button { background: #111827; border-color: #1f2a3d; fill: #9ca3af; }
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-thumb { background: #1f2a3d; border-radius: 3px; }
