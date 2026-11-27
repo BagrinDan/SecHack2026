@@ -10,21 +10,21 @@ export const bankInfo = (b) => BANKS[String(b || '').toUpperCase()] || { label: 
 
 export const shortHash = (h) => (h && h.length > 12 ? `${h.slice(0, 6)}…${h.slice(-4)}` : h || '')
 
-export const fmtMDL = (n) => `${Math.round(n || 0).toLocaleString('ru-RU')} MDL`
+export const fmtMDL = (n, locale = 'ru-RU') => `${Math.round(n || 0).toLocaleString(locale)} MDL`
 
-export function fmtDuration(sec) {
+export function fmtDuration(sec, t = (k) => ({ u_s: 'с', u_min: 'мин', u_h: 'ч' })[k]) {
   if (sec == null) return '—'
-  if (sec < 60) return `${Math.round(sec)} с`
-  if (sec < 3600) return `${Math.round(sec / 60)} мин`
-  return `${(sec / 3600).toFixed(1)} ч`
+  if (sec < 60) return `${Math.round(sec)} ${t('u_s')}`
+  if (sec < 3600) return `${Math.round(sec / 60)} ${t('u_min')}`
+  return `${(sec / 3600).toFixed(1)} ${t('u_h')}`
 }
 
 export const riskColor = (r) => (r >= 80 ? '#ef4444' : r >= 50 ? '#f59e0b' : '#22c55e')
 
 export const SCENARIOS = [
-  { slug: 'gen4_drops', label: 'Атака: Дропы 4-го поколения', cls: 'from-red-600 to-rose-500' },
-  { slug: 'business_mule', label: 'Атака: Бизнес-мул', cls: 'from-amber-600 to-orange-500' },
-  { slug: 'test_ring', label: 'Атака: Тест + Кольцо', cls: 'from-fuchsia-600 to-purple-500' },
+  { slug: 'gen4_drops', key: 'atk_gen4_drops', cls: 'from-red-600 to-rose-500' },
+  { slug: 'business_mule', key: 'atk_business_mule', cls: 'from-amber-600 to-orange-500' },
+  { slug: 'test_ring', key: 'atk_test_ring', cls: 'from-fuchsia-600 to-purple-500' },
 ]
 
 async function req(url, opts) {

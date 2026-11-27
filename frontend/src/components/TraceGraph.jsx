@@ -2,13 +2,14 @@ import { useMemo } from 'react'
 import ReactFlow, { Background, Controls, MarkerType } from 'reactflow'
 import { Lock, X, Network } from 'lucide-react'
 import MuleNode from './MuleNode'
+import { useI18n } from '../i18n'
 import { bankInfo, fmtDuration, fmtMDL, riskColor } from '../lib'
 
 const nodeTypes = { mule: MuleNode }
 const COL_W = 300
 const ROW_H = 130
 
-function layout(trace) {
+function layout(trace, t, locale) {
   const byGen = {}
   trace.nodes.forEach((n) => (byGen[n.generation ?? 0] ||= []).push(n))
   const maxRows = Math.max(1, ...Object.values(byGen).map((a) => a.length))
@@ -33,7 +34,7 @@ function layout(trace) {
       source: e.source,
       target: e.target,
       animated: true,
-      label: `${fmtMDL(e.amount)}${e.is_test ? ' · тест' : ''}`,
+      label: `${fmtMDL(e.amount, locale)}${e.is_test ? ` · ${t('test')}` : ''}`,
       labelStyle: { fill: '#e5e7eb', fontSize: 11, fontWeight: 600 },
       labelBgStyle: { fill: '#0B0F19' },
       labelBgPadding: [4, 2],
@@ -49,20 +50,21 @@ function layout(trace) {
 }
 
 export default function TraceGraph({ trace, selected, onSelect, onFreeze, freezing }) {
-  const { nodes, edges } = useMemo(() => (trace ? layout(trace) : { nodes: [], edges: [] }), [trace])
+  const { t, locale } = useI18n()
+  const { nodes, edges } = useMemo(() => (trace ? layout(trace, t, locale) : { nodes: [], edges: [] }), [trace, t, locale])
   const sel = selected && trace?.nodes.find((n) => n.hash === selected)
   const bank = sel && bankInfo(sel.bank)
 
   return (
     <section className="relative flex h-full flex-col">
       <div className="flex items-center gap-2 border-b border-line px-4 py-2 text-sm font-semibold">
-        <Network size={16} className="text-micb" /> Дерево распределения (Dispersion Tree)
-        {trace && <span className="ml-2 text-xs font-normal text-gray-500">Корень: {trace.root_tx_id}</span>}
+        <Network size={16} className="text-micb" /> {t('graph_title')}
+        {trace && <span className="ml-2 text-xs font-normal text-gray-500">{t('root')}: {trace.root_tx_id}</span>}
       </div>
       <div className="relative flex-1">
         {!trace && (
           <div className="absolute inset-0 z-10 flex items-center justify-center text-sm text-gray-500">
-            Запустите симулятор атак или нажмите «Трассировать» в очереди алертов
+            {t('graph_empty')}
           </div>
         )}
         <ReactFlow
@@ -88,17 +90,17 @@ export default function TraceGraph({ trace, selected, onSelect, onFreeze, freezi
             </div>
             <div className="mt-1 break-all font-mono text-[11px] text-gray-300">{sel.hash}</div>
             <dl className="mt-2 space-y-1">
-              <Row k="Поколение" v={sel.generation === 0 ? 'Жертва' : `Gen ${sel.generation}`} />
+              <Row k={t('generation')} v={sel.generation === 0 ? t('victim') : `Gen ${sel.generation}`} />
               <Row k="Risk Score" v={<b style={{ color: riskColor(sel.risk_score) }}>{sel.risk_score ?? 0}</b>} />
-              <Row k="Dwell Time" v={fmtDuration(sel.dwell_time)} />
-              <Row k="Статус" v={sel.status === 'FROZEN' ? <span className="text-red-500">FROZEN</span> : sel.status || 'ACTIVE'} />
+              <Row k="Dwell Time" v={fmtDuration(sel.dwell_time, t)} />
+              <Row k={t('status')} v={sel.status === 'FROZEN' ? <span className="text-red-500">{t('frozen')}</span> : sel.status || t('active')} />
             </dl>
             <button
               disabled={sel.status === 'FROZEN' || freezing}
               onClick={() => onFreeze(sel.hash)}
               className="mt-3 flex w-full items-center justify-center gap-2 rounded-md bg-red-600 px-3 py-2 font-semibold text-white hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-40"
             >
-              <Lock size={14} /> Заблокировать счёт (maib / MIA Alert)
+              <Lock size={14} /> {t('freeze_full')}
             </button>
           </div>
         )}

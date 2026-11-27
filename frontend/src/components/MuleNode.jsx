@@ -1,8 +1,10 @@
 import { Handle, Position } from 'reactflow'
 import { Lock, User } from 'lucide-react'
+import { useI18n } from '../i18n'
 import { bankInfo, fmtDuration, riskColor, shortHash } from '../lib'
 
 export default function MuleNode({ data, selected }) {
+  const { t } = useI18n()
   const bank = bankInfo(data.bank)
   const frozen = data.status === 'FROZEN'
   const isVictim = data.generation === 0
@@ -23,15 +25,15 @@ export default function MuleNode({ data, selected }) {
           </div>
           <div className="mt-0.5 font-mono text-[13px]">{shortHash(data.hash)}</div>
           <div className="mt-2 flex items-center justify-between">
-            <span className="text-gray-400">{isVictim ? 'Жертва' : `Gen ${data.generation}`}</span>
+            <span className="text-gray-400">{isVictim ? t('victim') : `Gen ${data.generation}`}</span>
             {!isVictim && (
               <span className="rounded px-1.5 py-0.5 font-bold" style={{ background: rc + '22', color: rc }}>
                 Risk {data.risk_score ?? 0}
               </span>
             )}
           </div>
-          {!isVictim && <div className="mt-1 text-gray-400">Dwell: {fmtDuration(data.dwell_time)}</div>}
-          {frozen && <div className="mt-1 font-bold text-red-500">FROZEN</div>}
+          {!isVictim && <div className="mt-1 text-gray-400">Dwell: {fmtDuration(data.dwell_time, t)}</div>}
+          {frozen && <div className="mt-1 font-bold text-red-500">{t('frozen')}</div>}
         </div>
       </div>
       <Handle type="source" position={Position.Right} className="!bg-gray-500" />

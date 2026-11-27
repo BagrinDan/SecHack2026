@@ -1,14 +1,16 @@
 import { Lock, Route, Siren } from 'lucide-react'
+import { useI18n } from '../i18n'
 import { bankInfo, riskColor, shortHash } from '../lib'
 
 export default function AlertQueue({ alerts, filter, setFilter, onTrace, onFreeze }) {
+  const { t } = useI18n()
   return (
     <aside className="flex h-full flex-col">
       <div className="flex items-center gap-2 border-b border-line px-4 py-2 text-sm font-semibold">
-        <Siren size={16} className="text-red-500" /> Очередь алертов (maib Compliance)
+        <Siren size={16} className="text-red-500" /> {t('queue_title')}
       </div>
       <div className="flex gap-1 p-3">
-        {[['all', 'Все банки MIA'], ['maib', 'Только клиенты maib']].map(([k, l]) => (
+        {[['all', t('f_all')], ['maib', t('f_maib')]].map(([k, l]) => (
           <button
             key={k}
             onClick={() => setFilter(k)}
@@ -21,7 +23,7 @@ export default function AlertQueue({ alerts, filter, setFilter, onTrace, onFreez
         ))}
       </div>
       <div className="flex-1 space-y-2 overflow-y-auto px-3 pb-3">
-        {alerts.length === 0 && <div className="pt-8 text-center text-xs text-gray-500">Алертов нет</div>}
+        {alerts.length === 0 && <div className="pt-8 text-center text-xs text-gray-500">{t('no_alerts')}</div>}
         {alerts.map((a) => {
           const bank = bankInfo(a.bank)
           const frozen = a.status === 'FROZEN'
@@ -50,14 +52,14 @@ export default function AlertQueue({ alerts, filter, setFilter, onTrace, onFreez
                     onClick={() => onTrace(a.root_tx_id || a.hash)}
                     className="flex flex-1 items-center justify-center gap-1 rounded-md bg-micb px-2 py-1.5 font-semibold hover:brightness-110"
                   >
-                    <Route size={13} /> Трассировать
+                    <Route size={13} /> {t('trace')}
                   </button>
                   <button
                     disabled={frozen}
                     onClick={() => onFreeze(a.hash)}
                     className="flex flex-1 items-center justify-center gap-1 rounded-md bg-red-600 px-2 py-1.5 font-semibold hover:bg-red-500 disabled:opacity-40"
                   >
-                    <Lock size={13} /> {frozen ? 'Заморожен' : 'Заморозить'}
+                    <Lock size={13} /> {frozen ? t('frozen_done') : t('freeze')}
                   </button>
                 </div>
               </div>

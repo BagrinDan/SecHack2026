@@ -5,8 +5,10 @@ import TraceGraph from './components/TraceGraph'
 import AlertQueue from './components/AlertQueue'
 import LiveFeed from './components/LiveFeed'
 import { api } from './lib'
+import { useI18n } from './i18n'
 
 export default function App() {
+  const { t } = useI18n()
   const [stats, setStats] = useState(null)
   const [alerts, setAlerts] = useState([])
   const [filter, setFilter] = useState('all')
@@ -24,8 +26,8 @@ export default function App() {
     try {
       const [s, a] = await Promise.all([api.stats(), api.alerts(filter === 'maib' ? 'maib' : null)])
       setStats(s); setAlerts(a); setError(null)
-    } catch (e) { setError('Бэкенд недоступен: ' + e.message) }
-  }, [filter])
+    } catch (e) { setError(t('backend_down') + ': ' + e.message) }
+  }, [filter, t])
 
   const loadTrace = useCallback(async (tx) => {
     const t = await api.trace(tx)
