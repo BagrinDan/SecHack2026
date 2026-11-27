@@ -53,7 +53,7 @@
 - **Проверка (DoD):** локальный скрипт-прогон генерирует валидные цепочки транзакций с корректными временными метками.
 
 ### Commit 4 — `feat(ws): setup FastAPI app with in-memory graph and live MIA WebSocket`
-- [ ] **Файлы:** `backend/main.py`
+- [x] **Файлы:** `backend/main.py`
 - **Что делаем:**
   - Поднимаем FastAPI с CORS (`allow_origins=["*"]`).
   - Инициализируем NetworkX `MultiDiGraph` в памяти и фоновую задачу симулятора при старте (lifespan).
