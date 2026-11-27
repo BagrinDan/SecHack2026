@@ -1,0 +1,64 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Тёмная тема (по умолчанию). Значения — RGB-каналы, чтобы работали модификаторы прозрачности (bg-soc-bg/40). */
+:root {
+  --soc-bg: 11 15 25;
+  --soc-panel: 18 24 38;
+  --soc-border: 31 41 55;
+  --soc-text: 229 231 235;
+  --soc-muted: 156 163 175;
+  --bank-MAIB: #E31E24;
+  --bank-MICB: #1E88E5;
+  --bank-VICTORIABANK: #2E7D32;
+  --bank-OTP: #7CB342;
+  --bank-FINCOMBANK: #F9A825;
+  color-scheme: dark;
+}
+
+:root[data-theme='light'] {
+  --soc-bg: 243 244 246;
+  --soc-panel: 255 255 255;
+  --soc-border: 209 213 219;
+  --soc-text: 17 24 39;
+  --soc-muted: 107 114 128;
+  --bank-MAIB: #C8161C;
+  --bank-MICB: #1565C0;
+  --bank-VICTORIABANK: #2E7D32;
+  --bank-OTP: #558B2F;
+  --bank-FINCOMBANK: #B7791F;
+  color-scheme: light;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: rgb(var(--soc-bg));
+  color: rgb(var(--soc-text));
+  font-family: Inter, system-ui, -apple-system, 'Segoe UI', sans-serif;
+}
+
+/* Кнопки управления React Flow подстраиваются под тему */
+.react-flow__controls {
+  box-shadow: 0 0 0 1px rgb(var(--soc-border));
+  border-radius: 6px;
+  overflow: hidden;
+}
+.react-flow__controls-button {
+  background: rgb(var(--soc-panel));
+  border-bottom: 1px solid rgb(var(--soc-border));
+  color: rgb(var(--soc-text));
+  fill: rgb(var(--soc-text));
+}
+.react-flow__controls-button:hover {
+  background: rgb(var(--soc-border));
+}
+.react-flow__controls-button svg {
+  fill: currentColor;
+}
