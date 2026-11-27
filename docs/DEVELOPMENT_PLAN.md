@@ -121,7 +121,7 @@
 - **Проверка (DoD):** после клика по любой из 3 кнопок атаки граф красиво и читаемо отрисовывается без наложения узлов.
 
 ### Commit 11 — `feat(compliance): add alert queue, account freeze modal, and live MIA feed`
-- [ ] **Файлы:** `frontend/src/components/AlertQueue.jsx`, `frontend/src/components/LiveFeed.jsx`, `frontend/src/components/NodeDetailsDrawer.jsx`
+- [x] **Файлы:** `frontend/src/components/AlertQueue.jsx`, `frontend/src/components/LiveFeed.jsx`, `frontend/src/components/NodeDetailsDrawer.jsx`
 - **Что делаем:**
   - Добавляем правую панель «Очередь алертов» с фильтром «Все банки MIA / Только клиенты maib» и кнопками «Трассировать» / «Заморозить».
   - При клике на узел графа открываем карточку с деталями и кнопкой блокировки (`POST /api/accounts/{hash}/freeze`).

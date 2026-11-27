@@ -79,6 +79,7 @@ class MuleAlert(BaseModel):
     generation: Optional[int] = None
     root_tx_id: Optional[str] = None
     tree_count: int = 1  # в скольких деревьях распределения участвует счёт
+    status: AccountStatus = AccountStatus.ACTIVE  # текущий статус счёта (FROZEN после блокировки)
     created_at: datetime = Field(default_factory=utcnow)
 
 

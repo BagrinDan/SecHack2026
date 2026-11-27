@@ -285,6 +285,10 @@ class GraphEngine:
         return alert
 
     def list_alerts(self, bank: Optional[BankCode] = None) -> List[MuleAlert]:
+        for a in self.alerts.values():
+            acc = self.accounts.get(a.account_hash)
+            if acc:
+                a.status = acc.status
         alerts = [a for a in self.alerts.values() if bank is None or a.bank_code == bank]
         return sorted(alerts, key=lambda a: (-a.risk_score, a.created_at))
 
