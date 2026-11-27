@@ -105,7 +105,7 @@
 - **Проверка (DoD):** `npm run dev` открывает пустой тёмный экран без ошибок в консоли.
 
 ### Commit 9 — `feat(ui): build header, real-time KPI bar, and Attack Simulator buttons`
-- [ ] **Файлы:** `frontend/src/components/Header.jsx`, `frontend/src/components/KpiBar.jsx`, `frontend/src/App.jsx`
+- [x] **Файлы:** `frontend/src/components/Header.jsx`, `frontend/src/components/KpiBar.jsx`, `frontend/src/App.jsx`
 - **Что делаем:**
   - Верстаем верхнюю панель «MuleTrace MD | MIA Network Intelligence».
   - Подключаем автообновление 4 KPI-карточек (интервал 2–3 сек).
