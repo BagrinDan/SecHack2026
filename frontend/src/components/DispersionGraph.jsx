@@ -30,7 +30,7 @@ function layout(nodes, edges) {
   return y
 }
 
-export default function DispersionGraph({ rootTxId, refreshKey, onNodeSelect }) {
+export default function DispersionGraph({ rootTxId, refreshKey, onNodeSelect, mode }) {
   const [trace, setTrace] = useState(null)
   const [error, setError] = useState(null)
 
@@ -80,7 +80,9 @@ export default function DispersionGraph({ rootTxId, refreshKey, onNodeSelect }) 
   }, [trace])
 
   if (!rootTxId) {
-    return <Placeholder>Запустите сценарий атаки, чтобы построить дерево распределения</Placeholder>
+    return <Placeholder>{mode === 'csv'
+        ? 'Загрузите CSV, чтобы построить дерево распределения'
+        : 'Запустите сценарий атаки, чтобы построить дерево распределения'}</Placeholder>
   }
   if (error) return <Placeholder>{error}</Placeholder>
 
