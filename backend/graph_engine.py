@@ -62,6 +62,7 @@ class GraphEngine:
         self.sources: Dict[str, Set[str]] = defaultdict(set)  # счёт -> отправители крупных поступлений
         self.generation: Dict[str, int] = {}                  # минимальное поколение из трассировок
         self.root_of: Dict[str, str] = {}                     # счёт -> первая трассировка с ним
+        self.frozen_mdl: Dict[str, float] = {}                # замороженный счёт -> предотвращённая сумма
 
     # ---- выборки по узлу, отсортированные по времени ----
     def _in(self, node: str) -> List[Transaction]:
@@ -286,3 +287,54 @@ class GraphEngine:
     def list_alerts(self, bank: Optional[BankCode] = None) -> List[MuleAlert]:
         alerts = [a for a in self.alerts.values() if bank is None or a.bank_code == bank]
         return sorted(alerts, key=lambda a: (-a.risk_score, a.created_at))
+
+    # ---- заморозка и аналитика ----
+    def freeze(self, acc_hash: str) -> Tuple[Account, float, bool]:
+        """Симуляция блокировки. Возвращает (счёт, предотвращённая сумма MDL, был ли уже заморожен).
+
+        Предотвращённая сумма: всё, что счёт пропустил дальше; для конечной точки — всё, что на него пришло.
+        """
+        acc = self.accounts[acc_hash]  # KeyError -> 404 в API
+        already = acc.status == AccountStatus.FROZEN
+        if not already:
+            total_in = sum(t.amount_mdl for t in self._in(acc_hash))
+            total_out = sum(t.amount_mdl for t in self._out(acc_hash))
+            self.frozen_mdl[acc_hash] = round(total_out if total_out > 0 else total_in, 2)
+            acc.status = AccountStatus.FROZEN
+        return acc, self.frozen_mdl.get(acc_hash, 0.0), already
+
+    def avg_dwell_sec(self, acc_hash: str) -> Optional[float]:
+        ins, outs = self._in(acc_hash), self._out(acc_hash)
+        vals = []
+        for o in outs:
+            prev = [i.timestamp for i in ins if i.timestamp < o.timestamp]
+            if prev:
+                vals.append((o.timestamp - max(prev)).total_seconds())
+        return sum(vals) / len(vals) if vals else None
+
+    def endpoint_hotlist(self, limit: int = 5) -> List[dict]:
+        """Конечные точки вывода: счета из деревьев распределения, откуда деньги дальше не уходят."""
+        rows = []
+        for h in self.trees:
+            if self.graph.out_degree(h) == 0:
+                total_in = sum(t.amount_mdl for t in self._in(h))
+                if total_in > 0:
+                    acc = self.accounts.get(h)
+                    bank = acc.bank_code if acc else self._bank_of(h)
+                    rows.append({
+                        "account_hash": h, "bank_code": bank.value, "total_in_mdl": round(total_in, 2),
+                        "tree_count": len(self.trees[h]),
+                        "status": acc.status.value if acc else "ACTIVE",
+                    })
+        return sorted(rows, key=lambda r: -r["total_in_mdl"])[:limit]
+
+    def kpi(self) -> dict:
+        dwells = [d for h in self.alerts if (d := self.avg_dwell_sec(h)) is not None]
+        return {
+            "transactions_checked": len(self.transactions),
+            "mules_detected": len(self.alerts),
+            "avg_dwell_time_sec": round(sum(dwells) / len(dwells), 1) if dwells else None,
+            "blocked_amount_mdl": round(sum(self.frozen_mdl.values()), 2),
+            "frozen_accounts": len(self.frozen_mdl),
+            "endpoint_hotlist": self.endpoint_hotlist(5),
+        }

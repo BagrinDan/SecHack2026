@@ -85,7 +85,7 @@
 - **Проверка (DoD):** запуск любого из 3 сценариев автоматически создаёт релевантные алерты с заполненными тегами правил.
 
 ### Commit 7 — `feat(api): expose REST endpoints for simulation, trace, alerts, freeze, and KPI`
-- [ ] **Файлы:** `backend/main.py`
+- [x] **Файлы:** `backend/main.py`
 - **Что делаем:** добавляем эндпоинты:
   - `POST /api/simulate/{scenario}` (`layered` | `business` | `cycle`)
   - `GET /api/trace/{tx_id}`
