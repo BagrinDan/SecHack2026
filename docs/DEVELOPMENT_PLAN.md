@@ -71,7 +71,7 @@
 - **Проверка (DoD):** при вызове трассировки на корневой транзакции сценария layered возвращается дерево глубиной до 4 поколений.
 
 ### Commit 6 — `feat(alerts): implement rule-based mule scoring and pattern detection`
-- [ ] **Файлы:** `backend/graph_engine.py`
+- [x] **Файлы:** `backend/graph_engine.py`
 - **Что делаем:**
   - Добавляем автоматический пересчёт `risk_score` (0–100) при поступлении транзакций по 5 правилам:
     | Правило | Условие | Баллы |

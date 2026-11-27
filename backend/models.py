@@ -78,6 +78,7 @@ class MuleAlert(BaseModel):
     rules: List[str] = Field(default_factory=list)
     generation: Optional[int] = None
     root_tx_id: Optional[str] = None
+    tree_count: int = 1  # в скольких деревьях распределения участвует счёт
     created_at: datetime = Field(default_factory=utcnow)
 
 
