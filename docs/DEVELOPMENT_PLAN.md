@@ -97,7 +97,7 @@
 ## Этап 3. Фронтенд-дашборд аналитика maib
 
 ### Commit 8 — `chore(frontend): bootstrap React + Vite + Tailwind + React Flow`
-- [ ] **Файлы:** `frontend/package.json`, `frontend/tailwind.config.js`, `frontend/src/index.css`, `frontend/src/api.js`
+- [x] **Файлы:** `frontend/package.json`, `frontend/tailwind.config.js`, `frontend/src/index.css`, `frontend/src/api.js`
 - **Что делаем:**
   - Разворачиваем шаблон Vite (React), устанавливаем `tailwindcss`, `reactflow`, `lucide-react`.
   - Настраиваем тёмную тему SOC (`#0B0F19`) и константы цветов молдавских банков (MAIB, MICB, VICTORIABANK, OTP, FINCOMBANK).
