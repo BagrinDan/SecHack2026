@@ -11,7 +11,7 @@ from datetime import datetime, timezone
 from enum import Enum
 from typing import List, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 # Соль фиксирована для прототипа (в проде — секрет в KMS, общий для банков-участников MIA).
 HASH_SALT = "muletrace-md-2026"
@@ -86,20 +86,26 @@ class GraphNode(BaseModel):
     bank_code: BankCode
     account_type: AccountType
     status: AccountStatus
-    generation: int
-    risk_score: int = 0
+    generation: int = Field(ge=0, le=5)
+    risk_score: int = Field(default=0, ge=0, le=100)
+    rules: List[str] = Field(default_factory=list)
     total_in: float = 0.0
     total_out: float = 0.0
-    dwell_time_sec: Optional[float] = None
+    fan_out: int = 0
+    dwell_time_sec: Optional[float] = None  # среднее время удержания; None — деньги дальше не уходили
 
 
 class GraphEdge(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
     tx_id: str
-    source: str
-    target: str
+    from_hash: str = Field(alias="from")
+    to_hash: str = Field(alias="to")
     amount_mdl: float
     timestamp: datetime
-    is_test: bool = False
+    channel: Channel = Channel.MIA_P2P
+    is_test_tx: bool = False
+    cross_bank: bool = False
 
 
 class DispersionGraph(BaseModel):

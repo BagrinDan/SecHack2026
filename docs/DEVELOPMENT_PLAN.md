@@ -63,7 +63,7 @@
 ## Этап 2. Графовый движок трассировки и API
 
 ### Commit 5 — `feat(engine): add temporal BFS tracing and Dispersion Tree builder`
-- [ ] **Файлы:** `backend/graph_engine.py`
+- [x] **Файлы:** `backend/graph_engine.py`
 - **Что делаем:**
   - Реализуем метод `trace_funds(start_tx_id, max_depth=5)`: обход графа вперёд строго по возрастанию времени (в пределах 24-часового окна).
   - Рассчитываем для каждого узла: поколение мула (`generation`), суммы `total_in` / `total_out` и время удержания средств (`dwell_time_sec`).
