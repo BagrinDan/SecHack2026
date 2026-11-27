@@ -4,7 +4,14 @@ export default {
   theme: {
     extend: {
       colors: {
-        soc: { bg: '#0B0F19', panel: '#121826', border: '#1F2937', text: '#E5E7EB', muted: '#9CA3AF' },
+        // Цвета интерфейса задаются CSS-переменными (см. index.css), поэтому работают в обеих темах
+        soc: {
+          bg: 'rgb(var(--soc-bg) / <alpha-value>)',
+          panel: 'rgb(var(--soc-panel) / <alpha-value>)',
+          border: 'rgb(var(--soc-border) / <alpha-value>)',
+          text: 'rgb(var(--soc-text) / <alpha-value>)',
+          muted: 'rgb(var(--soc-muted) / <alpha-value>)',
+        },
         // Цвета банков Молдовы
         bank: {
           MAIB: '#E31E24',

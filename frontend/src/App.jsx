@@ -9,8 +9,10 @@ import HotlistPanel from './components/HotlistPanel'
 import Toast from './components/Toast'
 import { getMode, resetDemo, setMode } from './api'
 import { BANK_LABELS } from './constants'
+import { fmtMdl, useI18n } from './i18n'
 
 export default function App() {
+  const { t, locale } = useI18n()
   // root_tx_id выбранной трассировки — по нему граф запрашивает дерево
   const [rootTxId, setRootTxId] = useState(null)
   const [refreshKey, setRefreshKey] = useState(0) // форсирует обновление KPI, алертов и графа
@@ -62,8 +64,7 @@ export default function App() {
 
   function handleFrozen(res) {
     if (!res.already_frozen) {
-      const mdl = `${Math.round(res.prevented_mdl).toLocaleString('ru-RU')} MDL`
-      setToast(`Сигнал блокировки отправлен в ${BANK_LABELS[res.bank_code]} за ${res.latency_ms} мс. Предотвращён вывод ${mdl}`)
+      setToast(t('toast_block', { bank: BANK_LABELS[res.bank_code], ms: res.latency_ms, amount: fmtMdl(res.prevented_mdl, locale) }))
     }
     setSelected((s) => (s && s.account_hash === res.account_hash ? { ...s, status: 'FROZEN' } : s))
     refresh()
@@ -86,8 +87,8 @@ export default function App() {
         <div className="flex h-full w-[340px] shrink-0 flex-col gap-2">
           <div className="flex rounded-md border border-soc-border bg-soc-panel p-0.5 text-xs" role="tablist">
             {[
-              ['alerts', 'Очередь алертов'],
-              ['hotlist', 'Аналитика сети'],
+              ['alerts', t('tab_alerts')],
+              ['hotlist', t('tab_hotlist')],
             ].map(([id, label]) => (
               <button
                 key={id}
@@ -95,7 +96,7 @@ export default function App() {
                 aria-selected={tab === id}
                 onClick={() => setTab(id)}
                 className={`flex-1 rounded px-2 py-1.5 transition ${
-                  tab === id ? 'bg-soc-border text-white' : 'text-soc-muted hover:text-white'
+                  tab === id ? 'bg-soc-border text-soc-text' : 'text-soc-muted hover:text-soc-text'
                 }`}
               >
                 {label}

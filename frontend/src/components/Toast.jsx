@@ -1,7 +1,9 @@
 import { useEffect } from 'react'
 import { ShieldCheck, X } from 'lucide-react'
+import { useI18n } from '../i18n'
 
 export default function Toast({ toast, onClose }) {
+  const { t } = useI18n()
   useEffect(() => {
     if (!toast) return
     const id = setTimeout(onClose, 6000)
@@ -17,7 +19,7 @@ export default function Toast({ toast, onClose }) {
     >
       <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-risk-low" />
       <span>{toast}</span>
-      <button onClick={onClose} aria-label="Закрыть" className="text-soc-muted hover:text-white">
+      <button onClick={onClose} aria-label={t('close')} className="text-soc-muted hover:text-soc-text">
         <X className="h-4 w-4" />
       </button>
     </div>
