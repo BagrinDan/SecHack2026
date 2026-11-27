@@ -46,16 +46,18 @@ class Simulator:
     def __init__(self, seed: Optional[int] = None, pool_size: int = POOL_SIZE) -> None:
         self.rng = random.Random(seed)
         self.accounts: Dict[str, Account] = {}
+        self.legit_pool: List[str] = []  # только фоновые счета; счета сценариев в легитимный трафик не попадают
         self._pool_size = pool_size
         self.reset_pool()
 
     # ---- пул счетов ----
     def reset_pool(self) -> None:
         self.accounts.clear()
+        self.legit_pool.clear()
         for i in range(self._pool_size):
             bank = BANKS[i % len(BANKS)]  # ровное распределение по 5 банкам
             acc_type = AccountType.BUSINESS if self.rng.random() < 0.1 else AccountType.PERSONAL
-            self.new_account(bank, acc_type)
+            self.legit_pool.append(self.new_account(bank, acc_type).account_hash)
 
     def new_account(self, bank: BankCode, account_type: AccountType = AccountType.PERSONAL) -> Account:
         # Токен строится от уникального синтетического идентификатора (имитация IBAN/телефона).
@@ -68,7 +70,8 @@ class Simulator:
         return acc
 
     def _legit_candidates(self) -> List[Account]:
-        return [a for a in self.accounts.values() if a.status != AccountStatus.FROZEN]
+        accs = (self.accounts[h] for h in self.legit_pool)
+        return [a for a in accs if a.status != AccountStatus.FROZEN]
 
     # ---- легитимный трафик ----
     def legit_transaction(self) -> Transaction:
