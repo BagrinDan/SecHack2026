@@ -113,7 +113,7 @@
 - **Проверка (DoD):** клик по кнопке атаки запускает симуляцию на бэкенде, счётчики KPI растут.
 
 ### Commit 10 — `feat(graph): implement interactive Dispersion Tree with React Flow`
-- [ ] **Файлы:** `frontend/src/components/DispersionGraph.jsx`, `frontend/src/components/MuleNode.jsx`
+- [x] **Файлы:** `frontend/src/components/DispersionGraph.jsx`, `frontend/src/components/MuleNode.jsx`
 - **Что делаем:**
   - Создаём кастомный узел `MuleNode`: цветная полоска банка, короткий хэш, бейдж Risk Score, поколение мула, Dwell Time, статус FROZEN (красная рамка + иконка замка).
   - Реализуем раскладку слева направо по координате `X = generation * 280` (чтобы не тратить время на тяжёлые графовые движки).
