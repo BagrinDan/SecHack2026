@@ -8,7 +8,7 @@ from domain.enums import AccountStatus, TxStatus
 from domain.models import MuleAlert, Transaction
 
 from .alerts import AlertRegistry
-from .config import PREVENT_MAX_DEPTH
+from .config import PREVENT_MAX_DEPTH, PREVENT_MAX_FROZEN, PREVENT_MIN_MDL, WINDOW
 from .freezing import FreezeLedger
 from .view import GraphView
 
@@ -43,14 +43,19 @@ class Prevention:
             self.registry.sources.get(tx.to_hash, set()).discard(tx.from_hash)
 
     def auto_freeze(self, alerts: List[MuleAlert]) -> List[str]:
-        """Замораживает счета с алертами и каскадом всех получателей их исходящих переводов."""
+        """Замораживает счета с алертами и счета, куда ушли их деньги.
+
+        Каскад идёт только вперёд во времени: перевод считается продолжением входящего, если он
+        позже него, в пределах окна WINDOW. Мелкие переводы (< PREVENT_MIN_MDL) его не продолжают,
+        а число замороженных за один каскад ограничено PREVENT_MAX_FROZEN.
+        """
         if not self.enabled:
             return []
         frozen: List[str] = []
-        queue = deque((a.account_hash, 0) for a in alerts)
+        queue = deque((a.account_hash, 0, None) for a in alerts)  # (счёт, глубина, пришедший перевод)
         seen: Set[str] = set()
-        while queue:
-            node, depth = queue.popleft()
+        while queue and len(frozen) < PREVENT_MAX_FROZEN:
+            node, depth, inc = queue.popleft()
             if node in seen:
                 continue
             seen.add(node)
@@ -58,7 +63,12 @@ class Prevention:
                 self.ledger.freeze(node)
                 self.auto_frozen.add(node)
                 frozen.append(node)
-            if depth < PREVENT_MAX_DEPTH:
-                for t in self.view.outs(node):
-                    queue.append((t.to_hash, depth + 1))
+            if depth >= PREVENT_MAX_DEPTH:
+                continue
+            for t in self.view.outs(node):
+                if t.amount_mdl < PREVENT_MIN_MDL:
+                    continue
+                if inc is not None and not (inc.timestamp < t.timestamp <= inc.timestamp + WINDOW):
+                    continue
+                queue.append((t.to_hash, depth + 1, t))
         return frozen

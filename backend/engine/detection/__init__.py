@@ -6,6 +6,7 @@ from domain.models import Transaction
 
 from ..view import GraphView
 from .cycle import cycle
+from .deep_chain import deep_chain
 from .fan_out import fan_out
 from .multi_source import multi_source_senders
 from .rapid_hop import rapid_hop
@@ -27,6 +28,8 @@ def scan(view: GraphView, tx: Transaction) -> Tuple[Dict[str, Set[str]], Optiona
         hits[h].add("CYCLING")
     for h in test_route(view, tx):
         hits[h].add("TEST_TRANSACTION")
+    for h in deep_chain(view, tx):
+        hits[h].add("DEEP_CHAIN")
     senders = multi_source_senders(view, tx)
     if senders is not None and len(senders) >= 2:
         hits[v].add("MULTI_TREE")

@@ -11,6 +11,7 @@ const RULE_LABELS = {
   CYCLING: 'Cycling',
   TEST_TRANSACTION: 'Test Tx',
   MULTI_TREE: 'Multi-tree',
+  DEEP_CHAIN: 'Deep Chain',
 }
 
 export default function AlertQueue({ refreshKey, onTrace, onChanged }) {
