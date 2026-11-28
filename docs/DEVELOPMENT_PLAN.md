@@ -130,7 +130,16 @@
 
 ## Этап 4. Полировка для презентации и запуск
 
-### Commit 12 — `feat(demo): add demo reset, Endpoint Hotlist analytics, and freeze feedback`
+### Commit 12 — `feat(prevention): add auto-freeze of flagged accounts and block of their outgoing transfers`
+- [x] **Файлы:** `backend/graph_engine.py`, `backend/models.py`, `backend/main.py`
+- **Что делаем:**
+  - При создании алерта (`risk_score >= 60`) счёт замораживается автоматически; заморозка каскадом идёт по деревьям распределения вперёд (получатели его исходящих переводов, глубина до 5).
+  - Транзакции, где отправитель или получатель заморожен, отклоняются на входе в `publish`: получают статус `BLOCKED`, в граф не попадают (авторизация до проведения), но транслируются в WS-ленту. Перевод, вызвавший алерт, тоже блокируется до проведения: он пробно добавляется в граф, проверяется правилами и откатывается, если создаёт алерт.
+  - Ручная заморозка (`POST /api/accounts/{hash}/freeze`) остаётся. Режим включается и выключается через `GET/POST /api/auto-prevent` (по умолчанию включён).
+  - В KPI и ответ `/api/simulate` добавляем `blocked_tx_count`, `rejected_amount_mdl` (сумма отклонённых переводов) и `auto_frozen`.
+- **Проверка (DoD):** сценарий `layered` с включённым auto-prevent обрывается: часть переводов G3/G4 получает `BLOCKED`, `rejected_amount_mdl > 0`; с выключенным проходят все 20. Легитимный фон не блокируется.
+
+### Commit 13 — `feat(demo): add demo reset, Endpoint Hotlist analytics, and freeze feedback`
 - [ ] **Файлы:** `backend/main.py`, `frontend/src/components/HotlistPanel.jsx`, `frontend/src/components/DispersionGraph.jsx`
 - **Что делаем:**
   - Добавляем `POST /api/reset` и кнопку «Сбросить демо» в интерфейс для чистого перезапуска перед менторами.
@@ -138,7 +147,7 @@
   - При заморозке узла перекрашиваем исходящие от него рёбра в серый пунктир и показываем тост: «Сигнал блокировки отправлен в [BANK] за 45 мс. Предотвращён вывод X MDL».
 - **Проверка (DoD):** повторный прогон всех 3 сценариев через «Сбросить демо» проходит стабильно и без утечек состояния.
 
-### Commit 13 — `docs: add one-command start script and pitch demo runbook`
+### Commit 14 — `docs: add one-command start script and pitch demo runbook`
 - [ ] **Файлы:** `start_demo.sh`, `README.md`
 - **Что делаем:**
   - Пишем скрипт `start_demo.sh` для одновременного запуска FastAPI и Vite.
@@ -148,5 +157,5 @@
 ---
 
 ## Финальная подготовка к защите
-- **Code Freeze** — после завершения Commit 13 в код вносятся только критические хотфиксы (`fix:`).
+- **Code Freeze** — после завершения Commit 14 в код вносятся только критические хотфиксы (`fix:`).
 - Репетиция питча и проверка работы демо при отключённом интернете (всё работает локально на `localhost`).

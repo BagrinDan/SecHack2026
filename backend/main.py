@@ -69,10 +69,27 @@ def add_to_graph(tx: Transaction) -> None:
     transactions[tx.tx_id] = tx
 
 
+def remove_from_graph(tx: Transaction) -> None:
+    graph.remove_edge(tx.from_hash, tx.to_hash, key=tx.tx_id)
+    transactions.pop(tx.tx_id, None)
+
+
 async def publish(tx: Transaction) -> None:
-    """Записывает транзакцию в граф и транслирует её всем WebSocket-клиентам."""
-    add_to_graph(tx)
-    engine.detect_suspects(tx)
+    """Авторизация перевода до проведения и трансляция всем WebSocket-клиентам.
+
+    1. Отправитель или получатель уже заморожен: перевод отклоняется сразу.
+    2. Перевод пробно добавляется в граф и проверяется правилами. Если он создаёт алерт,
+       он откатывается и отклоняется (BLOCKED), а счета замораживаются каскадом.
+    Отклонённый перевод в граф не попадает, но виден в ленте.
+    """
+    if engine.screen(tx):
+        add_to_graph(tx)
+        alerts = engine.detect_suspects(tx)
+        if alerts and engine.auto_prevent:
+            remove_from_graph(tx)
+            engine.reject(tx)
+            engine.forget_source(tx)
+        engine.auto_freeze(alerts)
     await manager.broadcast(tx.model_dump_json())
 
 
@@ -132,6 +149,13 @@ class SimulateResponse(BaseModel):
     root_tx_id: str
     tx_count: int
     alerts: List[MuleAlert]
+    blocked_tx_count: int = 0
+    rejected_amount_mdl: float = 0.0
+    auto_frozen: List[str] = []
+
+
+class AutoPreventRequest(BaseModel):
+    enabled: bool
 
 
 def _trace(tx_id: str, max_depth: int) -> DispersionGraph:
@@ -144,13 +168,17 @@ def _trace(tx_id: str, max_depth: int) -> DispersionGraph:
 @app.post("/api/simulate/{scenario}", response_model=SimulateResponse)
 async def simulate(scenario: Scenario):
     result = INJECTORS[scenario.value](simulator)
+    frozen_before, rejected_before = set(engine.auto_frozen), len(engine.rejected)
     for tx in result.transactions:
         await publish(tx)
     engine.trace_funds(result.root_tx_id)  # регистрирует дерево и поколения для алертов
     involved = {h for tx in result.transactions for h in (tx.from_hash, tx.to_hash)}
     alerts = [a for a in engine.list_alerts() if a.account_hash in involved]
+    blocked = [tx for tx in engine.rejected[rejected_before:] if tx.tx_id in {t.tx_id for t in result.transactions}]
     return SimulateResponse(
-        scenario=scenario, root_tx_id=result.root_tx_id, tx_count=len(result.transactions), alerts=alerts
+        scenario=scenario, root_tx_id=result.root_tx_id, tx_count=len(result.transactions), alerts=alerts,
+        blocked_tx_count=len(blocked), rejected_amount_mdl=round(sum(t.amount_mdl for t in blocked), 2),
+        auto_frozen=sorted(engine.auto_frozen - frozen_before),
     )
 
 
@@ -182,6 +210,17 @@ async def freeze_account(account_hash: str):
         "prevented_mdl": prevented,
         "already_frozen": already,
     }
+
+
+@app.get("/api/auto-prevent")
+async def get_auto_prevent():
+    return {"enabled": engine.auto_prevent}
+
+
+@app.post("/api/auto-prevent")
+async def set_auto_prevent(req: AutoPreventRequest):
+    engine.auto_prevent = req.enabled
+    return {"enabled": engine.auto_prevent}
 
 
 @app.get("/api/kpi")

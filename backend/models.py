@@ -37,6 +37,11 @@ class AccountStatus(str, Enum):
     FROZEN = "FROZEN"
 
 
+class TxStatus(str, Enum):
+    OK = "OK"
+    BLOCKED = "BLOCKED"  # отклонена автопредотвращением: отправитель или получатель заморожен
+
+
 class Channel(str, Enum):
     MIA_P2P = "MIA_P2P"
     MIA_QR = "MIA_QR"
@@ -68,6 +73,7 @@ class Transaction(BaseModel):
     to_bank: BankCode
     amount_mdl: float = Field(gt=0)
     channel: Channel = Channel.MIA_P2P
+    status: TxStatus = TxStatus.OK
 
 
 class MuleAlert(BaseModel):

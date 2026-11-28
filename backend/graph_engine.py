@@ -17,6 +17,7 @@ from models import (
     GraphNode,
     MuleAlert,
     Transaction,
+    TxStatus,
 )
 
 WINDOW = timedelta(hours=24)   # окно, в котором исходящий перевод считается продолжением входящего
@@ -32,6 +33,7 @@ RULE_POINTS = {
 }
 ALERT_THRESHOLD = 60
 
+PREVENT_MAX_DEPTH = 5         # глубина каскадной заморозки по дереву распределения
 RAPID_HOP_SEC = 600
 LARGE_MDL = 2_500.0           # выше максимума легитимного трафика симулятора (3 500) почти не бывает "в паре"
 FANOUT_MIN_IN_MDL = 5_000.0
@@ -63,6 +65,9 @@ class GraphEngine:
         self.generation: Dict[str, int] = {}                  # минимальное поколение из трассировок
         self.root_of: Dict[str, str] = {}                     # счёт -> первая трассировка с ним
         self.frozen_mdl: Dict[str, float] = {}                # замороженный счёт -> предотвращённая сумма
+        self.auto_prevent = True                              # автозаморозка по алертам и отклонение переводов
+        self.auto_frozen: Set[str] = set()                    # счета, замороженные автоматически
+        self.rejected: List[Transaction] = []                 # отклонённые переводы (в граф не попадают)
 
     # ---- выборки по узлу, отсортированные по времени ----
     def _in(self, node: str) -> List[Transaction]:
@@ -292,6 +297,48 @@ class GraphEngine:
         alerts = [a for a in self.alerts.values() if bank is None or a.bank_code == bank]
         return sorted(alerts, key=lambda a: (-a.risk_score, a.created_at))
 
+    # ---- автопредотвращение ----
+    def is_frozen(self, acc_hash: str) -> bool:
+        acc = self.accounts.get(acc_hash)
+        return acc is not None and acc.status == AccountStatus.FROZEN
+
+    def screen(self, tx: Transaction) -> bool:
+        """Проверка до проведения: True — перевод проходит, False — отклонён (статус BLOCKED)."""
+        if self.auto_prevent and (self.is_frozen(tx.from_hash) or self.is_frozen(tx.to_hash)):
+            self.reject(tx)
+            return False
+        return True
+
+    def reject(self, tx: Transaction) -> None:
+        tx.status = TxStatus.BLOCKED
+        self.rejected.append(tx)
+
+    def forget_source(self, tx: Transaction) -> None:
+        """После отката отклонённого перевода убирает отправителя из источников получателя."""
+        if not self.graph.has_edge(tx.from_hash, tx.to_hash):
+            self.sources.get(tx.to_hash, set()).discard(tx.from_hash)
+
+    def auto_freeze(self, alerts: List[MuleAlert]) -> List[str]:
+        """Замораживает счета с алертами и каскадом всех получателей их исходящих переводов."""
+        if not self.auto_prevent:
+            return []
+        frozen: List[str] = []
+        queue = deque((a.account_hash, 0) for a in alerts)
+        seen: Set[str] = set()
+        while queue:
+            node, depth = queue.popleft()
+            if node in seen:
+                continue
+            seen.add(node)
+            if node in self.accounts and not self.is_frozen(node):
+                self.freeze(node)
+                self.auto_frozen.add(node)
+                frozen.append(node)
+            if depth < PREVENT_MAX_DEPTH:
+                for t in self._out(node):
+                    queue.append((t.to_hash, depth + 1))
+        return frozen
+
     # ---- заморозка и аналитика ----
     def freeze(self, acc_hash: str) -> Tuple[Account, float, bool]:
         """Симуляция блокировки. Возвращает (счёт, предотвращённая сумма MDL, был ли уже заморожен).
@@ -340,5 +387,9 @@ class GraphEngine:
             "avg_dwell_time_sec": round(sum(dwells) / len(dwells), 1) if dwells else None,
             "blocked_amount_mdl": round(sum(self.frozen_mdl.values()), 2),
             "frozen_accounts": len(self.frozen_mdl),
+            "auto_prevent": self.auto_prevent,
+            "auto_frozen_accounts": len(self.auto_frozen),
+            "blocked_tx_count": len(self.rejected),
+            "rejected_amount_mdl": round(sum(t.amount_mdl for t in self.rejected), 2),
             "endpoint_hotlist": self.endpoint_hotlist(5),
         }
