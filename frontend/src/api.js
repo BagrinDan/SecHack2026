@@ -23,6 +23,8 @@ export async function freezeAccount(hash) {
   return { ...res, latency_ms: Math.max(1, Math.round(performance.now() - t0)) }
 }
 export const resetDemo = () => request('/api/reset', { method: 'POST' })
+export const getAutoPrevent = () => request('/api/auto-prevent')
+export const setAutoPrevent = (enabled) => request('/api/auto-prevent', { method: 'POST', body: JSON.stringify({ enabled }) })
 export const getKpi = () => request('/api/kpi')
 export const getMode = () => request('/api/mode')
 export const setMode = (mode) => request(`/api/mode/${mode}`, { method: 'POST' })

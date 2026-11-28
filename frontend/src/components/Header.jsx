@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react'
-import { Activity, FileUp, GitBranch, Moon, Network, RefreshCw, Repeat, RotateCcw, Sun } from 'lucide-react'
+import { Activity, FileUp, GitBranch, Moon, Network, RefreshCw, Repeat, RotateCcw, ShieldCheck, ShieldOff, Sun } from 'lucide-react'
 import { importCsv, simulate } from '../api'
 import { LANGS, useI18n } from '../i18n'
 import { useTheme } from '../theme'
@@ -12,7 +12,7 @@ const SCENARIOS = [
 
 const MODES = ['simulator', 'csv']
 
-export default function Header({ mode, onModeChange, onScenario, onImported, onReset }) {
+export default function Header({ mode, onModeChange, onScenario, onImported, onReset, autoPrevent, onAutoPreventChange }) {
   const { t, lang, setLang } = useI18n()
   const { theme, toggle } = useTheme()
   const [busy, setBusy] = useState(null)
@@ -40,6 +40,8 @@ export default function Header({ mode, onModeChange, onScenario, onImported, onR
       setInfo(null)
       await onModeChange(id)
     })
+
+  const toggleAuto = () => guarded('auto', () => onAutoPreventChange(!autoPrevent))
 
   const reset = () => guarded('reset', async () => { setInfo(null); await onReset() })
 
@@ -153,6 +155,21 @@ export default function Header({ mode, onModeChange, onScenario, onImported, onR
             </button>
           </>
         )}
+
+        <button
+          disabled={busy !== null || autoPrevent === null}
+          onClick={toggleAuto}
+          title={t('auto_hint')}
+          aria-pressed={autoPrevent === true}
+          className={`ml-2 flex items-center gap-2 rounded-md border px-3 py-2 text-sm transition disabled:opacity-50 ${
+            autoPrevent
+              ? 'border-risk-low/60 bg-risk-low/10 text-risk-low'
+              : 'border-soc-border bg-soc-bg text-soc-muted hover:text-soc-text'
+          }`}
+        >
+          {autoPrevent ? <ShieldCheck className="h-4 w-4" /> : <ShieldOff className="h-4 w-4" />}
+          {autoPrevent === null ? t('auto_unknown') : t(autoPrevent ? 'auto_on' : 'auto_off')}
+        </button>
 
         <button
           disabled={busy !== null || mode === null}

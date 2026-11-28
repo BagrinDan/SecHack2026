@@ -8,14 +8,16 @@ from domain.enums import BankCode
 
 from .alerts import AlertRegistry
 from .freezing import FreezeLedger
+from .prevention import Prevention
 from .view import GraphView, avg_dwell
 
 
 class Analytics:
-    def __init__(self, view: GraphView, registry: AlertRegistry, ledger: FreezeLedger) -> None:
+    def __init__(self, view: GraphView, registry: AlertRegistry, ledger: FreezeLedger, prevention: Prevention) -> None:
         self.view = view
         self.registry = registry
         self.ledger = ledger
+        self.prevention = prevention
 
     def avg_dwell_sec(self, acc_hash: str) -> Optional[float]:
         return avg_dwell(self.view.ins(acc_hash), self.view.outs(acc_hash))
@@ -48,6 +50,10 @@ class Analytics:
             "avg_dwell_time_sec": round(sum(dwells) / len(dwells), 1) if dwells else None,
             "blocked_amount_mdl": round(sum(self.ledger.frozen_mdl.values()), 2),
             "frozen_accounts": len(self.ledger.frozen_mdl),
+            "auto_prevent": self.prevention.enabled,
+            "auto_frozen_accounts": len(self.prevention.auto_frozen),
+            "blocked_tx_count": len(self.prevention.rejected),
+            "rejected_amount_mdl": round(sum(t.amount_mdl for t in self.prevention.rejected), 2),
             "endpoint_hotlist": self.endpoint_hotlist(5),
             "mules_by_bank": self.mules_by_bank(),
         }

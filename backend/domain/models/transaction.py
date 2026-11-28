@@ -3,7 +3,7 @@ from datetime import datetime
 
 from pydantic import BaseModel, Field
 
-from domain.enums import BankCode, Channel
+from domain.enums import BankCode, Channel, TxStatus
 from domain.helper import utcnow
 
 
@@ -16,3 +16,4 @@ class Transaction(BaseModel):
     to_bank: BankCode
     amount_mdl: float = Field(gt=0)
     channel: Channel = Channel.MIA_P2P
+    status: TxStatus = TxStatus.OK

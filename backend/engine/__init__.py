@@ -1,7 +1,7 @@
 """Графовый движок MuleTrace MD: трассировка (Dispersion Tree) и скоринг счетов-мулов.
 
 GraphEngine — фасад над модулями: view (выборки по графу), detection (правила), alerts (реестр),
-tracing (дерево распределения), freezing (заморозка), kpi (аналитика).
+tracing (дерево распределения), freezing (заморозка), prevention (автоблокировка), kpi (аналитика).
 """
 from __future__ import annotations
 
@@ -16,6 +16,7 @@ from .alerts import AlertRegistry
 from .detection import scan
 from .freezing import FreezeLedger
 from .kpi import Analytics
+from .prevention import Prevention
 from .tracing import Tracer
 from .view import GraphView
 
@@ -33,7 +34,8 @@ class GraphEngine:
         self.registry = AlertRegistry(self.view)
         self.ledger = FreezeLedger(self.view)
         self.tracer = Tracer(self.view, self.registry)
-        self.analytics = Analytics(self.view, self.registry, self.ledger)
+        self.prevention = Prevention(self.view, self.registry, self.ledger)
+        self.analytics = Analytics(self.view, self.registry, self.ledger, self.prevention)
 
     def trace_funds(self, start_tx_id: str, max_depth: int = 5) -> DispersionGraph:
         return self.tracer.trace_funds(start_tx_id, max_depth)
@@ -68,6 +70,28 @@ class GraphEngine:
 
     def freeze(self, acc_hash: str) -> Tuple[Account, float, bool]:
         return self.ledger.freeze(acc_hash)
+
+    # ---- автоблокировка ----
+    @property
+    def auto_prevent(self) -> bool:
+        return self.prevention.enabled
+
+    @auto_prevent.setter
+    def auto_prevent(self, value: bool) -> None:
+        self.prevention.enabled = value
+
+    def screen(self, tx: Transaction) -> bool:
+        """До проведения: False — перевод отклонён, потому что отправитель или получатель заморожен."""
+        return self.prevention.screen(tx)
+
+    def reject(self, tx: Transaction) -> None:
+        self.prevention.reject(tx)
+
+    def forget_source(self, tx: Transaction) -> None:
+        self.prevention.forget_source(tx)
+
+    def auto_freeze(self, alerts: List[MuleAlert]) -> List[str]:
+        return self.prevention.auto_freeze(alerts)
 
     def kpi(self) -> dict:
         return self.analytics.kpi()

@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, Request
 
 import state
-from domain.enums import AppMode
+from domain.enums import AppMode, TxStatus
 from domain.responses import ImportResponse, ImportRowError
 from ingest import CsvFormatError, parse_csv
 
@@ -47,6 +47,7 @@ async def import_csv(request: Request):
     for tx in txs:
         await state.publish(tx)
 
+    rejected = [tx for tx in txs if tx.status == TxStatus.BLOCKED]
     involved = set(parsed.accounts)
     state.engine.trace_alerts(involved)
     alerts = [a for a in state.engine.list_alerts() if a.account_hash in involved]
@@ -54,6 +55,9 @@ async def import_csv(request: Request):
         imported=len(txs),
         skipped=len(parsed.errors),
         accounts=len(parsed.accounts),
+        blocked_tx_count=len(rejected),
+        rejected_amount_mdl=round(sum(t.amount_mdl for t in rejected), 2),
+        auto_frozen=sorted(state.engine.prevention.auto_frozen),
         period_from=txs[0].timestamp,
         period_to=txs[-1].timestamp,
         errors=[ImportRowError(row=r, error=m) for r, m in parsed.errors[:MAX_ERRORS_REPORTED]],

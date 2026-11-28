@@ -7,7 +7,7 @@ import LiveFeed from './components/LiveFeed'
 import NodeDetailsDrawer from './components/NodeDetailsDrawer'
 import HotlistPanel from './components/HotlistPanel'
 import Toast from './components/Toast'
-import { getMode, resetDemo, setMode } from './api'
+import { getAutoPrevent, getMode, resetDemo, setAutoPrevent, setMode } from './api'
 import { BANK_LABELS } from './constants'
 import { fmtMdl, useI18n } from './i18n'
 
@@ -23,11 +23,13 @@ export default function App() {
 
   const [tab, setTab] = useState('alerts') // правая панель: 'alerts' | 'hotlist'
   const [toast, setToast] = useState(null)
+  const [autoPrevent, setAutoPreventState] = useState(null) // автоблокировка: true / false, null — ещё не загружено
 
   const refresh = () => setRefreshKey((n) => n + 1)
 
   useEffect(() => {
     getMode().then((r) => setModeState(r.mode)).catch(() => setModeState('simulator'))
+    getAutoPrevent().then((r) => setAutoPreventState(r.enabled)).catch(() => setAutoPreventState(null))
   }, [])
 
   // Бэкенд сбрасывает данные при переключении, поэтому очищаем и выбранное дерево, и ленту.
@@ -50,13 +52,27 @@ export default function App() {
     refresh()
   }
 
+  async function handleAutoPreventChange(enabled) {
+    const r = await setAutoPrevent(enabled)
+    setAutoPreventState(r.enabled)
+  }
+
+  // Сообщаем, сколько автоблокировка остановила: это главный результат прогона.
+  function notifyPrevented(res) {
+    if (res.blocked_tx_count > 0) {
+      setToast(t('toast_prevented', { n: res.blocked_tx_count, amount: fmtMdl(res.rejected_amount_mdl, locale) }))
+    }
+  }
+
   function handleImported(res) {
+    notifyPrevented(res)
     setRootTxId(res.root_tx_id)
     setSelected(null)
     refresh()
   }
 
   function handleScenario(res) {
+    notifyPrevented(res)
     setRootTxId(res.root_tx_id)
     setSelected(null)
     refresh()
@@ -72,7 +88,7 @@ export default function App() {
 
   return (
     <div className="flex h-full flex-col bg-soc-bg text-soc-text">
-      <Header mode={mode} onModeChange={handleModeChange} onScenario={handleScenario} onImported={handleImported} onReset={handleReset} />
+      <Header mode={mode} onModeChange={handleModeChange} onScenario={handleScenario} onImported={handleImported} onReset={handleReset} autoPrevent={autoPrevent} onAutoPreventChange={handleAutoPreventChange} />
       <KpiBar refreshKey={refreshKey} />
       <div className="mx-5 mb-4 flex min-h-0 flex-1 gap-4">
         <main className="relative min-w-0 flex-1 overflow-hidden rounded-lg border border-soc-border bg-soc-panel">
