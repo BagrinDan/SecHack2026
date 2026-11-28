@@ -15,16 +15,14 @@ from typing import Awaitable, Callable, Dict, List, Optional
 
 from pydantic import BaseModel, Field
 
-from models import (
-    Account,
-    AccountStatus,
-    AccountType,
-    BankCode,
-    Channel,
-    Transaction,
-    tokenize,
-    utcnow,
-)
+from domain.enums import AccountStatus, AccountType, BankCode, Channel
+from domain.helper import tokenize, utcnow
+from domain.models import Account, Transaction
+
+
+# Documentation: ONLY FOR HACKATON PURPUSE. This class is no-file simulator, 
+# to show to app will work in prod
+
 
 BANKS: List[BankCode] = list(BankCode)
 
@@ -48,6 +46,7 @@ class Simulator:
         self.accounts: Dict[str, Account] = {}
         self.legit_pool: List[str] = []  # только фоновые счета; счета сценариев в легитимный трафик не попадают
         self._pool_size = pool_size
+        self.paused = False  # True в режиме CSV: фоновый поток не генерируется
         self.reset_pool()
 
     # ---- пул счетов ----
@@ -93,7 +92,8 @@ class Simulator:
     ) -> None:
         """1–2 легитимные транзакции в секунду (пауза 0.5–1.0 с между транзакциями)."""
         while stop is None or not stop.is_set():
-            await emit(self.legit_transaction())
+            if not self.paused:
+                await emit(self.legit_transaction())
             await asyncio.sleep(self.rng.uniform(0.5, 1.0))
 
 

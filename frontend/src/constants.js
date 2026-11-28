@@ -1,10 +1,12 @@
-// Цвета банков MIA (синхронизированы с tailwind.config.js)
+// Цвета банков MIA (тёмная тема синхронизирована с tailwind.config.js)
+// Значения берутся из CSS-переменных (index.css): в светлой теме оттенки темнее, чтобы текст читался на белом.
+// Использовать только в style={{...}}, не в SVG-атрибутах.
 export const BANK_COLORS = {
-  MAIB: '#E31E24',
-  MICB: '#1E88E5',
-  VICTORIABANK: '#2E7D32',
-  OTP: '#7CB342',
-  FINCOMBANK: '#F9A825',
+  MAIB: 'var(--bank-MAIB)',
+  MICB: 'var(--bank-MICB)',
+  VICTORIABANK: 'var(--bank-VICTORIABANK)',
+  OTP: 'var(--bank-OTP)',
+  FINCOMBANK: 'var(--bank-FINCOMBANK)',
 }
 
 export const BANK_LABELS = {

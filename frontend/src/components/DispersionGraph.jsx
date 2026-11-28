@@ -3,12 +3,13 @@ import ReactFlow, { Background, Controls, MarkerType } from 'reactflow'
 import 'reactflow/dist/style.css'
 import { getTrace } from '../api'
 import MuleNode from './MuleNode'
+import { fmtMdl, useI18n } from '../i18n'
+import { GRAPH_GRID, useTheme } from '../theme'
 
 const nodeTypes = { mule: MuleNode }
 const X_STEP = 280
 const Y_STEP = 150
 
-const fmtMdl = (n) => `${Math.round(n).toLocaleString('ru-RU')} MDL`
 // Толщина линии ~ log(сумма): 15 MDL → ~1px, 50 000 MDL → ~7px
 const strokeWidth = (amount) => Math.max(1, Math.min(8, Math.log10(Math.max(amount, 10)) * 1.5 - 0.5))
 
@@ -30,7 +31,9 @@ function layout(nodes, edges) {
   return y
 }
 
-export default function DispersionGraph({ rootTxId, refreshKey, onNodeSelect }) {
+export default function DispersionGraph({ rootTxId, refreshKey, onNodeSelect, mode }) {
+  const { t, locale } = useI18n()
+  const { theme } = useTheme()
   const [trace, setTrace] = useState(null)
   const [error, setError] = useState(null)
 
@@ -40,7 +43,7 @@ export default function DispersionGraph({ rootTxId, refreshKey, onNodeSelect }) 
     setError(null)
     getTrace(rootTxId)
       .then((d) => alive && setTrace(d))
-      .catch(() => alive && setError('Не удалось загрузить трассировку'))
+      .catch(() => alive && setError(true))
     return () => {
       alive = false
     }
@@ -64,9 +67,9 @@ export default function DispersionGraph({ rootTxId, refreshKey, onNodeSelect }) 
           source: e.from,
           target: e.to,
           animated: !frozen.has(e.from),
-          label: fmtMdl(e.amount_mdl),
-          labelStyle: { fill: '#E5E7EB', fontSize: 11, fontFamily: 'ui-monospace, monospace' },
-          labelBgStyle: { fill: '#0B0F19', fillOpacity: 0.9 },
+          label: fmtMdl(e.amount_mdl, locale),
+          labelStyle: { fill: 'rgb(var(--soc-text))', fontSize: 11, fontFamily: 'ui-monospace, monospace' },
+          labelBgStyle: { fill: 'rgb(var(--soc-bg))', fillOpacity: 0.9 },
           labelBgPadding: [4, 2],
           style: {
             stroke: color,
@@ -77,12 +80,12 @@ export default function DispersionGraph({ rootTxId, refreshKey, onNodeSelect }) 
         }
       }),
     }
-  }, [trace])
+  }, [trace, locale])
 
   if (!rootTxId) {
-    return <Placeholder>Запустите сценарий атаки, чтобы построить дерево распределения</Placeholder>
+    return <Placeholder>{t(mode === 'csv' ? 'graph_empty_csv' : 'graph_empty_sim')}</Placeholder>
   }
-  if (error) return <Placeholder>{error}</Placeholder>
+  if (error) return <Placeholder>{t('trace_error')}</Placeholder>
 
   return (
     <ReactFlow
@@ -96,7 +99,7 @@ export default function DispersionGraph({ rootTxId, refreshKey, onNodeSelect }) 
       onNodeClick={(_, node) => onNodeSelect?.(node.data)}
       proOptions={{ hideAttribution: true }}
     >
-      <Background color="#1F2937" gap={24} />
+      <Background color={GRAPH_GRID[theme]} gap={24} />
       <Controls showInteractive={false} />
     </ReactFlow>
   )

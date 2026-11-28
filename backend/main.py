@@ -1,13 +1,8 @@
 """MuleTrace MD — FastAPI приложение: граф в памяти + живой WebSocket-поток транзакций MIA."""
-from __future__ import annotations
-
 import asyncio
 from contextlib import asynccontextmanager
-from enum import Enum
-from typing import List, Optional
 
-import networkx as nx
-from fastapi import FastAPI, HTTPException, Query, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
@@ -96,7 +91,7 @@ async def publish(tx: Transaction) -> None:
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     stop = asyncio.Event()
-    task = asyncio.create_task(simulator.run_background(publish, stop))
+    task = asyncio.create_task(state.simulator.run_background(state.publish, stop))
     try:
         yield
     finally:

@@ -1,25 +1,22 @@
 import { Handle, Position } from 'reactflow'
 import { Lock } from 'lucide-react'
 import { BANK_COLORS, BANK_LABELS } from '../constants'
+import { fmtDwell, useI18n } from '../i18n'
 
 const riskColor = (r) => (r >= 60 ? '#EF4444' : r >= 30 ? '#F59E0B' : '#22C55E')
 
-function fmtDwell(s) {
-  if (s == null) return '—'
-  return s >= 60 ? `${(s / 60).toFixed(1)} мин` : `${Math.round(s)} с`
-}
-
 export default function MuleNode({ data, selected }) {
+  const { t } = useI18n()
   const frozen = data.status === 'FROZEN'
   const color = BANK_COLORS[data.bank_code] || '#6B7280'
-  const genLabel = data.generation === 0 ? 'Жертва / источник' : `Поколение ${data.generation}`
+  const genLabel = data.generation === 0 ? t('victim') : t('generation_n', { n: data.generation })
 
   return (
     <div
       className={`w-[220px] overflow-hidden rounded-lg bg-soc-panel text-xs shadow-lg ${
-        selected ? 'ring-2 ring-white/60' : ''
+        selected ? 'ring-2 ring-soc-text/60' : ''
       }`}
-      style={{ border: `2px solid ${frozen ? '#EF4444' : '#1F2937'}` }}
+      style={{ border: `2px solid ${frozen ? '#EF4444' : 'rgb(var(--soc-border))'}` }}
     >
       <Handle type="target" position={Position.Left} className="!bg-soc-muted" />
       <div className="h-1.5" style={{ background: color }} />
@@ -45,9 +42,9 @@ export default function MuleNode({ data, selected }) {
         </div>
         <div className="flex justify-between text-soc-muted">
           <span>{genLabel}</span>
-          <span>Dwell: {fmtDwell(data.dwell_time_sec)}</span>
+          <span>Dwell: {fmtDwell(data.dwell_time_sec, t)}</span>
         </div>
-        {frozen && <div className="font-semibold text-risk-high">FROZEN</div>}
+        {frozen && <div className="font-semibold text-risk-high">{t('frozen').toUpperCase()}</div>}
       </div>
       <Handle type="source" position={Position.Right} className="!bg-soc-muted" />
     </div>
